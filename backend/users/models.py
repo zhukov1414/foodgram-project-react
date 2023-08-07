@@ -9,7 +9,7 @@ class User(AbstractUser):
         max_length=150,
         verbose_name='Уникальный юзернейм',
         unique=True,
-        validators=[validate_username,],
+        validators=[validate_username],
     )
     password = models.CharField(
         max_length=150,
