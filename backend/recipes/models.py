@@ -11,7 +11,6 @@ class Ingredient(models.Model):
     measurement_unit = models.CharField(max_length=16,
                                         verbose_name='Единица измерения'
                                         )
- 
 
     class Meta:
         ordering = ['name']
