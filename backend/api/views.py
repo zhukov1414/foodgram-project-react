@@ -7,17 +7,21 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
-from recipes.models import (Favorite, Ingredient, Recipe,
-                            RecipeIngredientAmount, ShoppingCart, Tag)
+from recipes.models import (Favorite,
+                            Ingredient,
+                            Recipe,
+                            RecipeIngredientAmount,
+                            ShoppingCart,
+                            Tag)
 from users.models import Subscription, User
 from api.filters import IngredientFilter, RecipesFilter
 from api.pagination import CustomUsersPagination
 from api.permissions import IsAdminOrAuthorOrReadOnly
 from api.serializers import (IngredientSerializer, RecipeCreateSerializer,
-                          RecipeSerializer, RecipeShortSerializer,
-                          SubscribeSerializer,
-                          SubscriptionsSerializer, TagSerializer,
-                          UsersSerializer)
+                             RecipeSerializer, RecipeShortSerializer,
+                             SubscribeSerializer,
+                             SubscriptionsSerializer, TagSerializer,
+                             UsersSerializer)
 from api.utils import recipe_add_or_del_method
 
 

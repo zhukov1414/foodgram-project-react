@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
-from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -130,7 +129,7 @@ USE_L10N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'users.User'
-RESERVED_USERNAMES = ('Me', 'me', 'ME', 'mE','admin', 'ADMIN')
+RESERVED_USERNAMES = ('Me', 'me', 'ME', 'mE', 'admin', 'ADMIN')
 VALID_USERNAME = r'[^\w.@+-]+'
 
 # Static files (CSS, JavaScript, Images)
