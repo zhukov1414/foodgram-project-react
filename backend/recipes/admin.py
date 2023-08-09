@@ -35,7 +35,6 @@ class IngredientAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-
 admin.site.site_header = 'Административная страница проекта Foodgram'
 admin.site.register(ShoppingCart)
 admin.site.register(Favorite)

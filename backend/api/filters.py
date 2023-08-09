@@ -1,5 +1,5 @@
 from django.db.models import Q
-from django.db.models import Exists, OuterRef, BooleanField
+from django.db.models import Exists, OuterRef
 from django_filters.rest_framework import FilterSet, filters
 from rest_framework.filters import SearchFilter
 
@@ -32,14 +32,13 @@ class RecipesFilter(FilterSet):
         user = self.request.user
         if user.is_anonymous:
             return queryset.none()
-        
         subquery = user.favorites.filter(recipe=OuterRef('pk'))
         queryset = queryset.annotate(is_favorited=Exists(subquery))
-        
         if value is True:
             return queryset.filter(is_favorited=True)
         elif value is False:
-            return queryset.filter(Q(is_favorited=False) | Q(is_favorited__isnull=True))
+            return queryset.filter(
+                Q(is_favorited=False) | Q(is_favorited__isnull=True))
         return queryset
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
@@ -53,7 +52,9 @@ class RecipesFilter(FilterSet):
         if value is True:
             return queryset.filter(is_in_shopping_cart=True)
         elif value is False:
-            return queryset.filter(Q(is_in_shopping_cart=False) | Q(is_in_shopping_cart__isnull=True))
+            return queryset.filter(
+                Q(is_in_shopping_cart=False) | Q
+                (is_in_shopping_cart__isnull=True))
         return queryset
 
     class Meta:

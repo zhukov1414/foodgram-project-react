@@ -48,11 +48,12 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
-    
+
     def clean(self):
         hex_color_pattern = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
         if not re.match(hex_color_pattern, self.color):
-            raise ValidationError('Цвет должен быть в формате hex-цвета (#RRGGBB)')
+            raise ValidationError(
+                'Цвет должен быть вформате hex-цвета (#RRGGBB)')
 
 
 class Recipe(models.Model):
