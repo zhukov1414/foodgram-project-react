@@ -1,3 +1,5 @@
+from django.db.models import Q
+from django.db.models import Exists, OuterRef, BooleanField
 from django_filters.rest_framework import FilterSet, filters
 from rest_framework.filters import SearchFilter
 
@@ -15,20 +17,45 @@ class RecipesFilter(FilterSet):
         to_field_name='slug',
         queryset=Tag.objects.all(),
     )
-    is_favorited = filters.NumberFilter(method='get_is_favorited')
-    is_in_shopping_cart = filters.NumberFilter(
-        method='get_is_in_shopping_cart')
 
-    def get_is_favorited(self, queryset, name, value):
-        if value and not self.request.user.is_anonymous:
-            return queryset.filter(in_favorites__user=self.request.user)
+    is_favorited = filters.BooleanFilter(
+        method='filter_is_favorited',
+        label='Is Favorited',
+    )
+
+    is_in_shopping_cart = filters.BooleanFilter(
+        method='filter_is_in_shopping_cart',
+        label='Is In Shopping Cart',
+    )
+
+    def filter_is_favorited(self, queryset, name, value):
+        user = self.request.user
+        if user.is_anonymous:
+            return queryset.none()
+        
+        subquery = user.favorites.filter(recipe=OuterRef('pk'))
+        queryset = queryset.annotate(is_favorited=Exists(subquery))
+        
+        if value is True:
+            return queryset.filter(is_favorited=True)
+        elif value is False:
+            return queryset.filter(Q(is_favorited=False) | Q(is_favorited__isnull=True))
         return queryset
 
-    def get_is_in_shopping_cart(self, queryset, name, value):
-        if value and not self.request.user.is_anonymous:
-            return queryset.filter(in_shopping_carts__user=self.request.user)
+    def filter_is_in_shopping_cart(self, queryset, name, value):
+        user = self.request.user
+        if user.is_anonymous:
+            return queryset.none()
+
+        subquery = user.shopping_carts.filter(recipe=OuterRef('pk'))
+        queryset = queryset.annotate(is_in_shopping_cart=Exists(subquery))
+
+        if value is True:
+            return queryset.filter(is_in_shopping_cart=True)
+        elif value is False:
+            return queryset.filter(Q(is_in_shopping_cart=False) | Q(is_in_shopping_cart__isnull=True))
         return queryset
 
     class Meta:
         model = Recipe
-        fields = ('author', 'tags', 'is_favorited', 'is_in_shopping_cart')
+        fields = ('author', 'tags')

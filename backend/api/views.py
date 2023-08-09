@@ -3,9 +3,11 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
+
+
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from recipes.models import (Favorite,
                             Ingredient,
@@ -14,15 +16,15 @@ from recipes.models import (Favorite,
                             ShoppingCart,
                             Tag)
 from users.models import Subscription, User
+
+
 from api.filters import IngredientFilter, RecipesFilter
 from api.pagination import CustomUsersPagination
-from api.permissions import IsAdminOrAuthorOrReadOnly
 from api.serializers import (IngredientSerializer, RecipeCreateSerializer,
                              RecipeSerializer, RecipeShortSerializer,
                              SubscribeSerializer,
                              SubscriptionsSerializer, TagSerializer,
                              UsersSerializer)
-from api.utils import recipe_add_or_del_method
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
@@ -74,9 +76,39 @@ class UsersViewSet(UserViewSet):
                         status=status.HTTP_204_NO_CONTENT)
 
 
+    @staticmethod
+    def _add_or_remove_item(request, model, pk, custom_serializer):
+        recipe = get_object_or_404(Recipe, id=pk)
+        if request.method == 'POST':
+            _, created = model.objects.get_or_create(user=request.user, recipe=recipe)
+            if created:
+                serializer = custom_serializer(recipe)
+                return Response(
+                    {'detail': f'Рецепт добавлен в {model.__name__}!', 'data': serializer.data},
+                    status=status.HTTP_201_CREATED)
+            return Response(
+                {'message': f'Рецепт уже находится в {model.__name__}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        recipe = get_object_or_404(model, user=request.user, recipe=recipe)
+        recipe.delete()
+        return Response({'detail': f'Рецепт успешно удален из {model.__name__}'},
+                        status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post', 'delete'],
+            permission_classes=(permissions.IsAuthenticated,))
+    def favorite(self, request, pk):
+        return self._add_or_remove_item(request, model=Favorite, pk=pk, custom_serializer=RecipeShortSerializer)
+
+    @action(detail=True, methods=['post', 'delete'],
+            permission_classes=(permissions.IsAuthenticated,))
+    def shopping_cart(self, request, pk):
+        return self._add_or_remove_item(request, model=ShoppingCart, pk=pk, custom_serializer=RecipeShortSerializer)
+
+
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = (IsAdminOrAuthorOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     pagination_class = CustomUsersPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipesFilter
@@ -95,7 +127,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(permissions.IsAuthenticated,), )
     def favorite(self, request, pk):
-        return recipe_add_or_del_method(request=request, model=Favorite,
+        return UsersViewSet._add_or_remove_item(request=request, model=Favorite,
                                         pk=pk,
                                         custom_serializer=RecipeShortSerializer
                                         )
@@ -103,7 +135,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(permissions.IsAuthenticated,))
     def shopping_cart(self, request, pk):
-        return recipe_add_or_del_method(request=request, model=ShoppingCart,
+        return UsersViewSet._add_or_remove_item(request=request, model=ShoppingCart,
                                         pk=pk,
                                         custom_serializer=RecipeShortSerializer
                                         )

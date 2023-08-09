@@ -12,15 +12,13 @@ services:
     volumes:
       - pg_data2:/var/lib/postgresql/data
   backend:
-    build: ../backend/
+    image: zhukov1414/foodgram_backend
     env_file: .env
     volumes:
-      - static:/app/static/
-      - media:/app/media/
+      - static:/static
+      - media:/app/media/recipes/images/
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: zhukov1414/foodgram_frontend
     volumes:
       - ../frontend/:/app/result_build/
   nginx:

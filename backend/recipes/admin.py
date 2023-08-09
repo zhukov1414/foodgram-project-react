@@ -4,16 +4,28 @@ from .models import (Favorite, Ingredient, Recipe, RecipeIngredientAmount,
                      ShoppingCart, Tag)
 
 
+class TagStackedInline(admin.StackedInline):
+    model = Recipe.tags.through
+    extra = 1
+
+
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('name', 'author', 'count_favorites')
     list_filter = ('author', 'name', 'tags',)
     empty_value_display = '-пусто-'
+    inlines = [TagStackedInline]
 
     @staticmethod
     def count_favorites(obj):
         return obj.in_favorites.count()
-    count_favorites.short_description = _('Число добавлений в избранноe')
+    count_favorites.short_description = _('Число добавлений в избранное')
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')
+    prepopulated_fields = {'slug': ('name',)}
 
 
 @admin.register(Ingredient)
@@ -23,8 +35,8 @@ class IngredientAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
+
 admin.site.site_header = 'Административная страница проекта Foodgram'
-admin.site.register(Tag)
 admin.site.register(ShoppingCart)
 admin.site.register(Favorite)
 admin.site.register(RecipeIngredientAmount)

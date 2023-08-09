@@ -33,9 +33,14 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class IngredientInRecipeSerializer(serializers.ModelSerializer):
-    id = ReadOnlyField(source='ingredient.id')
-    name = ReadOnlyField(source='ingredient.name')
-    measurement_unit = ReadOnlyField(source='ingredient.measurement_unit')
+    id = serializers.PrimaryKeyRelatedField(source='ingredient',
+                                            read_only=True)
+    name = serializers.SlugRelatedField(slug_field='name',
+                                        source='ingredient',
+                                        read_only=True)
+    measurement_unit = serializers.SlugRelatedField(
+        slug_field='measurement_unit',
+        source='ingredient', read_only=True)
 
     class Meta:
         model = RecipeIngredientAmount
@@ -56,24 +61,27 @@ class UsersSerializer(UserSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     author = UsersSerializer(read_only=True)
-    ingredients = IngredientInRecipeSerializer(many=True,
-                                               source='recipes')
+    ingredients = IngredientInRecipeSerializer(many=True, source='recipes')
     tags = TagSerializer(many=True)
     image = Base64ImageField()
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
+    def get_is_favorited_or_in_cart(self, obj, field):
+        request = self.context.get('request')
+        user = request.user
+        if request and user.is_authenticated:
+            if field == 'is_favorited':
+                return user.favorites.filter(recipe=obj).exists()
+            elif field == 'is_in_shopping_cart':
+                return user.shopping_carts.filter(recipe=obj).exists()
+        return False
+
     def get_is_favorited(self, obj):
-        return (self.context.get('request')
-                and not self.context.get('request').user.is_anonymous
-                and self.context.get('request').user.favorites.filter(
-                    recipe=obj).exists())
+        return self.get_is_favorited_or_in_cart(obj, 'is_favorited')
 
     def get_is_in_shopping_cart(self, obj):
-        return (self.context.get('request')
-                and not self.context.get('request').user.is_anonymous
-                and self.context.get('request').user.shopping_carts.filter(
-                    recipe=obj).exists())
+        return self.get_is_favorited_or_in_cart(obj, 'is_in_shopping_cart')
 
     class Meta:
         model = Recipe
@@ -83,7 +91,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class CreateUserSerializer(UserCreateSerializer):
-    username = serializers.CharField(max_length=150)
 
     class Meta:
         model = User
@@ -158,28 +165,7 @@ class ShoppingCartSerializer(FavoriteSerializer):
         model = ShoppingCart
 
 
-class SubscriptionsSerializer(UsersSerializer):
-    recipes_count = serializers.IntegerField(read_only=True)
-    recipes = RecipeSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'recipes', 'recipes_count')
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
-
-    def get_recipes(self, obj):
-        request = self.context.get('request')
-        limit = request.GET.get('recipes_limit')
-        recipes = obj.recipes.all()
-        if limit:
-            recipes = recipes[:int(limit)]
-        return recipes
-
-
-class SubscribeSerializer(serializers.ModelSerializer):
+class BaseUserSerializer(serializers.ModelSerializer):
     email = serializers.ReadOnlyField()
     username = serializers.ReadOnlyField()
     is_subscribed = serializers.BooleanField(
@@ -207,3 +193,14 @@ class SubscribeSerializer(serializers.ModelSerializer):
             recipes = recipes[:int(limit)]
         serializer = RecipeShortSerializer(recipes, many=True, read_only=True)
         return serializer.data
+
+
+class SubscriptionsSerializer(BaseUserSerializer):
+    recipes_count = serializers.IntegerField(read_only=True)
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
+
+
+class SubscribeSerializer(BaseUserSerializer):
+    pass

@@ -20,14 +20,6 @@ class User(AbstractUser):
         verbose_name='Адрес электронной почты. Обязательное поле.',
         unique=True
     )
-    first_name = models.CharField(
-        max_length=150,
-        verbose_name='Имя',
-    )
-    last_name = models.CharField(
-        max_length=150,
-        verbose_name='Фамилия',
-    )
 
     class Meta:
         verbose_name = 'Пользователь'

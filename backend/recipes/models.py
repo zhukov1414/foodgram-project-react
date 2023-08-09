@@ -1,11 +1,15 @@
+import re
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.core.exceptions import ValidationError
+from foodgram.settings import MAX_LENGTH
+
 
 User = get_user_model()
 
 
 class Ingredient(models.Model):
-    name = models.CharField(max_length=200,
+    name = models.CharField(max_length=MAX_LENGTH,
                             verbose_name='Название ингридиента'
                             )
     measurement_unit = models.CharField(max_length=16,
@@ -23,7 +27,7 @@ class Ingredient(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(
-        max_length=200,
+        max_length=MAX_LENGTH,
         verbose_name='Название тега',
         unique=True
     )
@@ -44,6 +48,11 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def clean(self):
+        hex_color_pattern = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
+        if not re.match(hex_color_pattern, self.color):
+            raise ValidationError('Цвет должен быть в формате hex-цвета (#RRGGBB)')
 
 
 class Recipe(models.Model):
@@ -54,7 +63,7 @@ class Recipe(models.Model):
         related_name='recipes'
     )
     name = models.CharField(
-        max_length=200,
+        max_length=MAX_LENGTH,
         verbose_name='Название рецепта'
     )
     image = models.ImageField(
