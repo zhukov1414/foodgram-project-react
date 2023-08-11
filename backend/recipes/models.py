@@ -1,7 +1,8 @@
-import re
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
+
+
 from foodgram.settings import MAX_LENGTH
 
 
@@ -34,7 +35,13 @@ class Tag(models.Model):
     color = models.CharField(
         max_length=7,
         unique=True,
-        verbose_name='Цвет'
+        verbose_name='Цвет',
+        validators=[
+            RegexValidator(
+                regex='^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$',
+                message='Цвет должен быть в формате HEX (#RRGGBB или #RGB)',
+            ),
+        ]
     )
     slug = models.SlugField(
         unique=True,
@@ -48,12 +55,6 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
-
-    def clean(self):
-        hex_color_pattern = r'^#(?:[0-9a-fA-F]{3}){1,2}$'
-        if not re.match(hex_color_pattern, self.color):
-            raise ValidationError(
-                'Цвет должен быть вформате hex-цвета (#RRGGBB)')
 
 
 class Recipe(models.Model):
@@ -133,26 +134,32 @@ class RecipeIngredientAmount(models.Model):
         return self.ingredient.name
 
 
-class ShoppingCart(models.Model):
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        verbose_name='Рецепт в списке покупок',
-        related_name='in_shopping_carts'
-    )
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='Владелец списка покупок',
-        related_name='shopping_carts'
-    )
+class BaseListMixin(models.Model):
     added_date = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата добавления'
     )
 
     class Meta:
+        abstract = True
         ordering = ['-added_date']
+
+    def __str__(self):
+        return f'{self.user}:{self.recipe}'
+
+
+class ShoppingCart(BaseListMixin):
+    recipe = models.ForeignKey(
+        'Recipe',
+        on_delete=models.CASCADE,
+        related_name='in_shopping_carts'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
         constraints = [
@@ -160,36 +167,22 @@ class ShoppingCart(models.Model):
                 fields=('recipe', 'user'),
                 name='shopping_cart_recipe_unique')]
 
-    def __str__(self):
-        return f'{self.user}:{self.recipe}'
 
-
-class Favorite(models.Model):
+class Favorite(BaseListMixin):
     recipe = models.ForeignKey(
-        Recipe,
+        'Recipe',
         on_delete=models.CASCADE,
-        verbose_name='Рецепт в списке избранных',
         related_name='in_favorites'
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Пользователь',
-        related_name='favorites'
-    )
-    added_date = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата добавления в список избранного'
     )
 
     class Meta:
-        ordering = ['-added_date']
         verbose_name = 'Список избранного'
         verbose_name_plural = 'Списки избранного'
         constraints = [
             models.UniqueConstraint(
                 fields=('recipe', 'user'),
                 name='favorite_recipe_unique')]
-
-    def __str__(self):
-        return f'{self.user}:{self.recipe}'

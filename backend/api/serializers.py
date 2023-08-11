@@ -67,21 +67,17 @@ class RecipeSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
-    def get_is_favorited_or_in_cart(self, obj, field):
+    def get_is_favorited_or_in_cart(self, obj, model):
         request = self.context.get('request')
         user = request.user
         if request and user.is_authenticated:
-            if field == 'is_favorited':
-                return user.favorites.filter(recipe=obj).exists()
-            elif field == 'is_in_shopping_cart':
-                return user.shopping_carts.filter(recipe=obj).exists()
-        return False
+            return model.objects.filter(user=user, recipe=obj).exists()
 
     def get_is_favorited(self, obj):
-        return self.get_is_favorited_or_in_cart(obj, 'is_favorited')
+        return self.get_is_favorited_or_in_cart(obj, Favorite)
 
     def get_is_in_shopping_cart(self, obj):
-        return self.get_is_favorited_or_in_cart(obj, 'is_in_shopping_cart')
+        return self.get_is_favorited_or_in_cart(obj, ShoppingCart)
 
     class Meta:
         model = Recipe
@@ -166,8 +162,8 @@ class ShoppingCartSerializer(FavoriteSerializer):
 
 
 class BaseUserSerializer(serializers.ModelSerializer):
-    email = serializers.ReadOnlyField()
-    username = serializers.ReadOnlyField()
+    email = serializers.CharField(read_only=True)
+    username = serializers.CharField(read_only=True)
     is_subscribed = serializers.BooleanField(
         default=serializers.CurrentUserDefault()
     )
