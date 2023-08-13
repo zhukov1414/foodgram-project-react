@@ -134,11 +134,20 @@ class RecipeIngredientAmount(models.Model):
         return self.ingredient.name
 
 
-class BaseListMixin(models.Model):
+class BaseList(models.Model):
     added_date = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата добавления'
     )
+    recipe = models.ForeignKey(
+        'Recipe',
+        on_delete=models.CASCADE,
+        related_name='%(class)ss')
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='%(class)ss')
 
     class Meta:
         abstract = True
@@ -148,16 +157,7 @@ class BaseListMixin(models.Model):
         return f'{self.user}:{self.recipe}'
 
 
-class ShoppingCart(BaseListMixin):
-    recipe = models.ForeignKey(
-        'Recipe',
-        on_delete=models.CASCADE,
-        related_name='in_shopping_carts'
-    )
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-    )
+class ShoppingCart(BaseList):
 
     class Meta:
         verbose_name = 'Список покупок'
@@ -168,16 +168,7 @@ class ShoppingCart(BaseListMixin):
                 name='shopping_cart_recipe_unique')]
 
 
-class Favorite(BaseListMixin):
-    recipe = models.ForeignKey(
-        'Recipe',
-        on_delete=models.CASCADE,
-        related_name='in_favorites'
-    )
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-    )
+class Favorite(BaseList):
 
     class Meta:
         verbose_name = 'Список избранного'

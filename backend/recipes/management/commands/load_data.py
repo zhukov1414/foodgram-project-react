@@ -6,9 +6,11 @@ from recipes.models import Ingredient
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument('file_path', type=str, help='Path to the CSV file')
 
     def handle(self, *args, **options):
-        with open('data/ingredients.csv', encoding='utf-8') as file:
+        with open(options['file_path'], encoding='utf-8') as file:
             csv_list = csv.reader(file)
             for row in csv_list:
                 name, measurement_unit = row

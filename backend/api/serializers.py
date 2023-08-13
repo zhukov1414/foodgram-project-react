@@ -1,12 +1,16 @@
-from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
+from djoser.serializers import UserCreateSerializer, UserSerializer
 
 
-from recipes.models import (Favorite, Ingredient, Recipe,
-                            RecipeIngredientAmount, ShoppingCart, Tag)
-from users.models import User
 from api.images import Base64ImageField
 from api.utils import check_subscribed
+from users.models import User
+from recipes.models import (Favorite,
+                            Ingredient,
+                            Recipe,
+                            RecipeIngredientAmount,
+                            ShoppingCart,
+                            Tag)
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -162,17 +166,12 @@ class ShoppingCartSerializer(FavoriteSerializer):
 
 
 class BaseUserSerializer(serializers.ModelSerializer):
-    email = serializers.CharField(read_only=True)
-    username = serializers.CharField(read_only=True)
     is_subscribed = serializers.BooleanField(
         default=serializers.CurrentUserDefault()
     )
-    recipes = RecipeSerializer(many=True, read_only=True)
     recipes_count = serializers.IntegerField(
         source='recipes.count', read_only=True
     )
-    first_name = serializers.CharField(required=False)
-    last_name = serializers.CharField(required=False)
 
     class Meta:
         model = User
@@ -180,6 +179,7 @@ class BaseUserSerializer(serializers.ModelSerializer):
             'email', 'id', 'username', 'first_name', 'last_name',
             'is_subscribed', 'recipes', 'recipes_count'
         )
+        read_only_fields = ('email', 'username', 'recipes', 'recipes_count')
 
     def get_recipes(self, obj):
         request = self.context.get('request')
