@@ -17,7 +17,6 @@ from recipes.models import (Favorite,
                             RecipeIngredientAmount,
                             ShoppingCart,
                             Tag)
-from users.models import Subscription, User
 from api.filters import IngredientFilter, RecipesFilter
 from api.pagination import CustomUsersPagination
 from api.serializers import (IngredientSerializer, RecipeCreateSerializer,
@@ -25,6 +24,7 @@ from api.serializers import (IngredientSerializer, RecipeCreateSerializer,
                              SubscribeSerializer,
                              SubscriptionsSerializer, TagSerializer,
                              UsersSerializer)
+from users.models import Subscription, User
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
@@ -154,7 +154,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def download_shopping_cart(self, request):
         ingredients = RecipeIngredientAmount.objects.filter(
-            recipe__in_shopping_carts__user=request.user).values(
+            recipe__shoppingcarts__user=request.user).values(
             'ingredient__name',
             'ingredient__measurement_unit').annotate(
             total_amount=Sum('amount'))

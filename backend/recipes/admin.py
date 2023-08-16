@@ -1,19 +1,27 @@
 from django.contrib import admin
 
 
-from recipes.models import (Favorite, Ingredient, Recipe,
-                            RecipeIngredientAmount, ShoppingCart, Tag)
+from recipes.models import (Favorite,
+                            Ingredient,
+                            Recipe,
+                            RecipeIngredientAmount,
+                            ShoppingCart,
+                            Tag)
+from recipes.validate_delete import ValidateDeliteForm
 
 
-class TagStackedInline(admin.StackedInline):
+class TagStackedInline(admin.TabularInline):
     model = Recipe.tags.through
-    extra = 1
+    extra = 0
+    min_num = 1
+    formset = ValidateDeliteForm
 
 
 class RecipeIngredientAmountInline(admin.TabularInline):
     model = RecipeIngredientAmount
-    extra = 1
-    can_delete = False
+    extra = 0
+    min_num = 1
+    formset = ValidateDeliteForm
 
 
 @admin.register(Recipe)
@@ -23,6 +31,7 @@ class RecipeAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
     inlines = [TagStackedInline, RecipeIngredientAmountInline]
     exclude = ('tags',)
+    formset = ValidateDeliteForm
 
 
 @admin.register(Tag)
