@@ -166,6 +166,7 @@ class ShoppingCartSerializer(FavoriteSerializer):
 
 
 class BaseUserSerializer(serializers.ModelSerializer):
+    recipes = RecipeSerializer(many=True, read_only=True)
     is_subscribed = serializers.BooleanField(
         default=serializers.CurrentUserDefault()
     )
@@ -192,8 +193,6 @@ class BaseUserSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionsSerializer(BaseUserSerializer):
-    recipes_count = serializers.IntegerField(read_only=True)
-
     def get_recipes_count(self, obj):
         return obj.recipes.count()
 
